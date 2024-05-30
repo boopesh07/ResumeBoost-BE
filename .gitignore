@@ -1,0 +1,10 @@
+# Environment variables
+.env
+
+# PyCharm project files
+.idea/
+
+# Virtual environment
+.vscode/
+.venv/
+.virtualEnv
