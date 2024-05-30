@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-st.title("Resume Tailoring Tool")
+st.title("Resume Booster Tool")
 
 # Add custom CSS to center the buttons
 st.markdown(

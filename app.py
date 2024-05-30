@@ -71,6 +71,7 @@ def generate_resume():
         project_suggestions = response_json.get('project_suggestions')
         project_suggestions = '-' + '\n- '.join(project_suggestions)
     except json.JSONDecodeError:
+
         return jsonify({'error': 'Failed to parse response from the model'}), 500
 
     return jsonify({
@@ -90,7 +91,7 @@ def generate_cover_letter():
         f"Here is a job description:\n\n{job_description}\n\n"
         f"And here is a candidate's resume:\n\n{resume_text}\n\n"
         "Using best practices for writing cover letters, generate a cover letter for the candidate that is tailored to the job description. "
-        "The cover letter should highlight the candidate's relevant skills, experiences, and enthusiasm for the role."
+        "The cover letter should not contain any placeholders, take all the relevant information from the resume and job description"
     )
 
     cover_letter = interact_with_GPT(cover_letter_system_prompt, user_message, max_tokens=1000)
