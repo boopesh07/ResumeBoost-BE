@@ -39,6 +39,7 @@ pip install -r requirements.txt
 
 ### 4. Set Up Environment Variables
 Create a .env file in the root directory of the project and add your OpenAI API key in the below format:
+
 OPENAI_API_KEY=your_openai_api_key
 
 ### 5. Run the Backend application
