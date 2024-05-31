@@ -40,7 +40,20 @@ pip install -r requirements.txt
 ### 4. Set Up Environment Variables
 Create a .env file in the root directory of the project and add your OpenAI API key in the below format:
 
+Examples
+
 OPENAI_API_KEY=your_openai_api_key
+
+DATABASE_URI=postgresql://admin:admin@localhost/resume_builder
+
+### 5. Initialize the Database 
+
+Before running the application, ensure that the PostgreSQL server is running and the database is created. Then, initialize the database schema:
+```bash
+flask db init
+flask db migrate -m "Initial migration."
+flask db upgrade
+````
 
 ### 5. Run the Backend application
 You can choose to run the Flask application directly from your IDE like PyCharm or also prefer the below approach of running from CLI
