@@ -31,11 +31,13 @@ logger = logging.getLogger(__name__)
 
 # System Prompts
 resume_tailor_system_prompt = (
-    "Imagine you are an expert in rewriting resumes tailored to the job description to clear the ATS scan and also impressive before a technical recruiter.\n"
-    "Examine the job description to identify required skills, qualifications, experience, and keywords. Assign a score for the resume.\n"
-    "You need to rewrite the resume according to the job description and include the keywords that can clear the ATS. While rewriting the project description be careful, you can rewrite the same project with better keywords and sentences but do not completely introduce a new project as it will a fake claim \n"
-    "You also need to suggest the technical projects that can help the resume look stronger and aligned with the job description.\n"
-    "Output the tailored resume, score improvement (inital score and final score out of 100) , project suggestions, and keywords inserted in the following JSON format:\n"
+    "You are an expert in rewriting resumes tailored to job descriptions to clear ATS scans and impress technical recruiters. \n\n"
+    "1. Examine the job description to identify required skills, qualifications, experience, and keywords.\n"
+    "2. Assign an initial score to the resume.\n"
+    "3. Rewrite the resume to align with the job description, including necessary keywords to clear the ATS. \n"
+    "4. Improve project descriptions using better keywords and sentences without introducing new projects.\n"
+    "5. Suggest technical projects that align with the job description.\n\n"
+    "Output the results in the following JSON format:\n"
     "{\n"
     "  'tailored_resume': '<tailored resume>',\n"
     "  'keywords_inserted': ['<keyword1>', '<keyword2>', ...],\n"
@@ -45,9 +47,11 @@ resume_tailor_system_prompt = (
 )
 
 cover_letter_system_prompt = (
-    "You are an expert in writing and tailoring cover letters.\n"
-    "Examine the job description to identify required skills, qualifications, and experience.\n"
-    "Generate a cover letter that is tailored to the job description, highlighting the candidate's relevant skills, experiences, and enthusiasm for the role."
+    "You are an expert in writing and tailoring cover letters.\n\n"
+    "1. Examine the job description to identify required skills, qualifications, and experience.\n"
+    "2. Highlight the candidate's relevant skills, experiences, and enthusiasm for the role.\n"
+    "3. Ensure the cover letter is professional, concise, and tailored to the job description.\n\n"
+    "Generate the cover letter in a professional tone, focusing on how the candidate’s skills and experiences match the job requirements."
 )
 
 def interact_with_GPT(system_prompt, user_message, model="gpt-4o", max_tokens=1500, json_output=False):
@@ -73,8 +77,8 @@ def generate_resume():
     job_description = data.get('job_description')
 
     user_message = (
-        f"Here is a job description:\n\n{job_description}\n\n"
-        f"And here is a candidate's resume:\n\n{resume_text}\n\n"
+        f"Here is a job description:\n\n\"\"\"\n{job_description}\n\"\"\"\n\n"
+        f"And here is a candidate's resume:\n\n\"\"\"\n{resume_text}\n\"\"\"\n\n"
     )
 
     tailored_resume_results = interact_with_GPT(resume_tailor_system_prompt, user_message, max_tokens=1500, json_output=True)
@@ -124,10 +128,9 @@ def generate_cover_letter():
     job_description = data.get('job_description')
 
     user_message = (
-        f"Here is a job description:\n\n{job_description}\n\n"
-        f"And here is a candidate's resume:\n\n{resume_text}\n\n"
-        "Using best practices for writing cover letters, generate a cover letter for the candidate that is tailored to the job description. "
-        "The cover letter should not contain any placeholders, take all the relevant information from the resume and job description"
+        f"Here is a job description:\n\n\"\"\"\n{job_description}\n\"\"\"\n\n"
+        f"And here is a candidate's resume:\n\n\"\"\"\n{resume_text}\n\"\"\"\n\n"
+        "Ensure the cover letter is professional and concise, without placeholders, using information from both the resume and job description."
     )
 
     try:
