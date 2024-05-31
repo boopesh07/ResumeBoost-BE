@@ -15,6 +15,10 @@ st.markdown(
     .stButton>button {
         width: 200px;
     }
+    textarea {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -37,7 +41,7 @@ with col1:
             result = response.json()
             # Display Tailored Resume
             tailored_resume = result.get('tailored_resume')
-            st.text_area("Tailored Resume:", value=tailored_resume, height=300)
+            st.text_area("Tailored Resume:", value=tailored_resume)
 
             # Display the keywords inserted
             keywords_inserted = result.get('keywords_inserted')
