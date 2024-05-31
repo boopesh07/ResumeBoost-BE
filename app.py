@@ -1,11 +1,8 @@
 from flask import Flask, request, jsonify
 from openai import OpenAI
-from models import db, ResumeBoostStatistic
-from flask_migrate import Migrate
-import logging
 import os
 import json
-import uuid
+
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -14,20 +11,6 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = Flask(__name__)
-
-# Set up database URI
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URI")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Initialize SQLAlchemy
-db.init_app(app)
-
-# Initialize Flask-Migrate
-migrate = Migrate(app, db)
-
-# Logging configuration
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # System Prompts
 resume_tailor_system_prompt = (
@@ -87,28 +70,9 @@ def generate_resume():
         score_improvement = response_json.get('score_improvement')
         project_suggestions = response_json.get('project_suggestions')
         project_suggestions = '-' + '\n- '.join(project_suggestions)
+    except json.JSONDecodeError:
 
-        # Save to database
-        run_id = str(uuid.uuid4())
-        resume_boost_entry = ResumeBoostStatistic(
-            id=run_id,
-            input_resume=resume_text,
-            input_job_description=job_description,
-            tailored_resume=tailored_resume,
-            keywords_inserted=json.dumps(keywords_inserted),
-            score_improvement=score_improvement,
-            project_suggestions=json.dumps(project_suggestions)
-        )
-        db.session.add(resume_boost_entry)
-        db.session.commit()
-        logger.info(f"Saved run ID {run_id} to the database")
-
-    except json.JSONDecodeError as e:
-        logger.error(f"JSONDecodeError: {str(e)}")
         return jsonify({'error': 'Failed to parse response from the model'}), 500
-    except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        return jsonify({'error': 'An error occurred'}), 500
 
     return jsonify({
         'tailored_resume': tailored_resume,
@@ -130,12 +94,7 @@ def generate_cover_letter():
         "The cover letter should not contain any placeholders, take all the relevant information from the resume and job description"
     )
 
-    try:
-        cover_letter = interact_with_GPT(cover_letter_system_prompt, user_message, max_tokens=1000)
-    except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        return jsonify({'error': 'An error occurred'}), 500
-
+    cover_letter = interact_with_GPT(cover_letter_system_prompt, user_message, max_tokens=1000)
     return jsonify({'cover_letter': cover_letter})
 
 if __name__ == '__main__':

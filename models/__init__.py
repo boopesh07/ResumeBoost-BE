@@ -1,1 +1,0 @@
-from .resume_stat import db, ResumeBoostStatistic
