@@ -1,4 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, url_for
+from flask_cors import CORS
+from flask_dance.contrib.google import make_google_blueprint, google
 from openai import OpenAI
 from models import db, ResumeBoostStatistic
 from flask_migrate import Migrate
@@ -19,6 +21,9 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URI")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Set up secret key for auth
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
+
 # Initialize SQLAlchemy
 db.init_app(app)
 
@@ -28,6 +33,20 @@ migrate = Migrate(app, db)
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+#Auth setup
+# Set up Flask-Dance
+blueprint = make_google_blueprint(
+    client_id="YOUR_GOOGLE_CLIENT_ID",
+    client_secret="YOUR_GOOGLE_CLIENT_SECRET",
+    scope=["profile", "email"],
+    redirect_url="/login/google"
+)
+app.register_blueprint(blueprint, url_prefix="/login")
+
+# Set up Flask-CORS
+CORS(app)
+
 
 # System Prompts
 resume_tailor_system_prompt = (
@@ -140,6 +159,17 @@ def generate_cover_letter():
         return jsonify({'error': 'An error occurred'}), 500
 
     return jsonify({'cover_letter': cover_letter})
+
+@app.route('/login/google')
+def google_login():
+    if not google.authorized:
+        return redirect(url_for('google.login'))
+    resp = google.get("/oauth2/v2/userinfo")
+    if resp.ok:
+        user_info = resp.json()
+        email = user_info["email"]
+        return "You are {email} on Google.".format(email=email)  # You will need to pass this information back to the frontend
+    return "Failed to fetch user info."
 
 if __name__ == '__main__':
     app.run(debug=True)
