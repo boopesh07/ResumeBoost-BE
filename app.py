@@ -13,9 +13,13 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 app = Flask(__name__)
+
+# Set up Flask-CORS
+CORS(app)
 
 # Set up database URI
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URI")
@@ -43,9 +47,6 @@ blueprint = make_google_blueprint(
     redirect_url="/login/google"
 )
 app.register_blueprint(blueprint, url_prefix="/login")
-
-# Set up Flask-CORS
-CORS(app)
 
 
 # System Prompts
