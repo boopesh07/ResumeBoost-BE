@@ -60,7 +60,7 @@ resume_tailor_system_prompt = (
     "{\n"
     "  'tailored_resume': '<tailored resume>',\n"
     "  'keywords_inserted': ['<keyword1>', '<keyword2>', ...],\n"
-    "  'score_improvement': '<score improvement>',\n"
+    "  'score_improvement': '<Initial score : 60%, Final score : 90%>',\n"
     "  'project_suggestions': ['<project suggestion 1>', '<project suggestion 2>', ...]\n"
     "}"
 )
