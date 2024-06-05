@@ -1,7 +1,5 @@
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, String, Text
-
-db = SQLAlchemy()
+from . import db
 
 class ResumeBoostStatistic(db.Model):
     __tablename__ = 'resume_boost_statistics'

@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, redirect, url_for
 from flask_cors import CORS
 from flask_dance.contrib.google import make_google_blueprint, google
 from openai import OpenAI
-from models import db, ResumeBoostStatistic
+from models import db, ResumeBoostStatistic, CoverLetterStatistic
 from flask_migrate import Migrate
 import logging
 import os
@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -38,7 +37,7 @@ migrate = Migrate(app, db)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-#Auth setup
+# Auth setup
 # Set up Flask-Dance
 blueprint = make_google_blueprint(
     client_id="YOUR_GOOGLE_CLIENT_ID",
@@ -47,7 +46,6 @@ blueprint = make_google_blueprint(
     redirect_url="/login/google"
 )
 app.register_blueprint(blueprint, url_prefix="/login")
-
 
 # System Prompts
 resume_tailor_system_prompt = (
@@ -59,7 +57,7 @@ resume_tailor_system_prompt = (
     "5. Suggest technical projects that align with the job description.\n\n"
     "Output the results in the following JSON format:\n"
     "{\n"
-    "  'tailored_resume': '<tailored resume>',\n"
+    "  'tailored_resume': '<tailored resume contents >',\n"
     "  'keywords_inserted': ['<keyword1>', '<keyword2>', ...],\n"
     "  'score_improvement': '<Initial score : 60%, Final score : 90%>',\n"
     "  'project_suggestions': ['<project suggestion 1>', '<project suggestion 2>', ...]\n"
@@ -107,10 +105,8 @@ def generate_resume():
         response_json = json.loads(tailored_resume_results)
         tailored_resume = response_json.get('tailored_resume')
         keywords_inserted = response_json.get('keywords_inserted')
-        keywords_inserted = '-' + '\n- '.join(keywords_inserted)
         score_improvement = response_json.get('score_improvement')
         project_suggestions = response_json.get('project_suggestions')
-        project_suggestions = '-' + '\n- '.join(project_suggestions)
 
         # Save to database
         run_id = str(uuid.uuid4())
@@ -119,7 +115,7 @@ def generate_resume():
             input_resume=resume_text,
             input_job_description=job_description,
             tailored_resume=tailored_resume,
-            keywords_inserted=json.dumps(keywords_inserted),
+            keywords_inserted=json.dumps(keywords_inserted),  # Save as JSON list
             score_improvement=score_improvement,
             project_suggestions=json.dumps(project_suggestions)
         )
@@ -134,12 +130,24 @@ def generate_resume():
         logger.error(f"Error: {str(e)}")
         return jsonify({'error': 'An error occurred'}), 500
 
-    return jsonify({
-        'tailored_resume': tailored_resume,
-        'keywords_inserted': keywords_inserted,
-        'score_improvement': score_improvement,
-        'project_suggestions': project_suggestions
-    })
+    return jsonify({'run_id': run_id})
+
+@app.route('/view_resume/<runId>', methods=['GET'])
+def view_resume(runId):
+    try:
+        resume_boost_entry = ResumeBoostStatistic.query.get(runId)
+        if resume_boost_entry is None:
+            return jsonify({'error': 'Run ID not found'}), 404
+
+        return jsonify({
+            'tailored_resume': resume_boost_entry.tailored_resume,
+            'keywords_inserted': json.loads(resume_boost_entry.keywords_inserted),
+            'score_improvement': resume_boost_entry.score_improvement,
+            'project_suggestions': json.loads(resume_boost_entry.project_suggestions)
+        })
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        return jsonify({'error': 'An error occurred'}), 500
 
 @app.route('/generate_cover_letter', methods=['POST'])
 def generate_cover_letter():
@@ -155,11 +163,38 @@ def generate_cover_letter():
 
     try:
         cover_letter = interact_with_GPT(cover_letter_system_prompt, user_message, max_tokens=1000)
+
+        # Save to database
+        run_id = str(uuid.uuid4())
+        cover_letter_entry = CoverLetterStatistic(
+            id=run_id,
+            input_resume=resume_text,
+            input_job_description=job_description,
+            cover_letter=cover_letter
+        )
+        db.session.add(cover_letter_entry)
+        db.session.commit()
+        logger.info(f"Saved run ID {run_id} to the database")
+
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         return jsonify({'error': 'An error occurred'}), 500
 
-    return jsonify({'cover_letter': cover_letter})
+    return jsonify({'run_id': run_id})
+
+@app.route('/view_cover/<runId>', methods=['GET'])
+def view_cover(runId):
+    try:
+        cover_letter_entry = CoverLetterStatistic.query.get(runId)
+        if cover_letter_entry is None:
+            return jsonify({'error': 'Run ID not found'}), 404
+
+        return jsonify({
+            'cover_letter': cover_letter_entry.cover_letter
+        })
+    except Exception as e:
+        logger.error(f"Error: {str(e)}")
+        return jsonify({'error': 'An error occurred'}), 500
 
 @app.route('/login/google')
 def google_login():
